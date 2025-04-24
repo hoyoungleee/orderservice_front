@@ -10,33 +10,36 @@ import {
 import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../context/UserContext';
-import { jwtDecode } from 'jwt-decode';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const navigate = useNavigate();
+  const { onLogin } = useContext(AuthContext);
 
   const doLogin = async () => {
     const loginData = {
       email,
       password,
     };
-    await fetch('http://localhost:8181/user/doLogin', {
-      method: 'post',
+
+    const res = await fetch('http://localhost:8181/user/doLogin', {
+      method: 'POST',
       headers: {
         'Content-type': 'application/json',
       },
       body: JSON.stringify(loginData),
     });
+    const data = await res.json();
 
     if (res.status === 200) {
       alert('로그인 성공!');
-      // 로그인 성공하면 map이 json으로 옴(id, role, token)
-      //   const token = data.
+      // 로그인 성공하면 map이 json으로 옴 (id, role, token)
+      onLogin(data.result);
+      navigate('/');
     } else {
-      alert('로그인 실패');
+      alert('로그인 실패입니다. 아이디 또는 비밀번호를 확인하세요!');
     }
   };
 
@@ -94,8 +97,8 @@ const LoginPage = () => {
 
       {/* 비밀번호 변경 모달 */}
       {/* <Dialog open={resetPassword} onClose={() => setResetPassword(false)}>
-            <ResetPasswordModal handleClose={() => setResetPassword(false)} />
-          </Dialog> */}
+          <ResetPasswordModal handleClose={() => setResetPassword(false)} />
+        </Dialog> */}
     </Grid>
   );
 };
