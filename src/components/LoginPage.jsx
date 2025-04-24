@@ -31,10 +31,12 @@ const LoginPage = () => {
       body: JSON.stringify(loginData),
     });
 
-    if(res.status === 200){
-        alert('로그인 성공!')
-    }else{
-        
+    if (res.status === 200) {
+      alert('로그인 성공!');
+      // 로그인 성공하면 map이 json으로 옴(id, role, token)
+      //   const token = data.
+    } else {
+      alert('로그인 실패');
     }
   };
 
