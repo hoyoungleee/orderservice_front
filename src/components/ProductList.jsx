@@ -17,28 +17,84 @@ import {
 } from '@mui/material';
 import React, { useContext, useEffect, useState } from 'react';
 import AuthContext from '../context/UserContext';
+import CartContext from '../context/CartContext';
+import { useNavigate } from 'react-router-dom';
 
 const ProductList = ({ pageTitle }) => {
   const [searchType, setSearchType] = useState('optional');
   const [searchValue, setSearchValue] = useState('');
   const [productList, setProductList] = useState([]);
   const [selected, setSelected] = useState({});
+  const navigate = useNavigate();
 
   const { userRole } = useContext(AuthContext);
   const isAdmin = userRole === 'ADMIN';
+
+  const { addCart } = useContext(CartContext);
 
   useEffect(() => {
     loadProduct();
   }, []);
 
   // 상품 목록을 백엔드에 요청하는 함수
-  const loadProduct = async (number, size) => {};
+  const loadProduct = async (number, size) => {
+    const res = await fetch('http://localhost:8181/product/list');
+    const data = await res.json();
+
+    // 백엔드로부터 전달받은 상품 목록을 상태 변수에 세팅.
+    setProductList(data.result);
+  };
 
   // 장바구니 클릭 이벤트 핸들러
-  const handleAddToCart = () => {};
+  const handleAddToCart = () => {
+    // 특정 객체에서 key값만 뽑아서 문자열 배열로 리턴해 주는 메서드
+    const selectedProduct = Object.keys(selected);
+
+    // key값만 뽑아서 selected에 들어있는 상품 중에 false 다 빼고 true인 것만 담겠다.
+    const filtered = selectedProduct.filter((key) => selected[key]);
+
+    // 사용자가 선택한 수량까지 파악해서 장바구니에 넣어 줍시다.
+    const finalSelected = filtered.map((key) => {
+      const product = productList.find((p) => p.id === parseInt(key));
+      return {
+        id: product.id,
+        name: product.name,
+        quantity: product.quantity,
+      };
+    });
+    console.log(finalSelected);
+
+    if (finalSelected.length < 1) {
+      alert('장바구니에 추가할 상품을 선택해 주세요!');
+      return;
+    }
+
+    for (let p of finalSelected) {
+      if (!p.quantity) {
+        alert('수량이 0개인 상품은 담을 수 없습니다.');
+        return;
+      }
+    }
+
+    if (confirm('상품을 장바구니에 추가하시겠습니까?')) {
+      // 카트로 상품을 보내주자.
+      finalSelected.forEach((product) => addCart(product));
+      alert('선택한 상품이 장바구니에 추가되었습니다.');
+    }
+
+    if (confirm('장바구니 화면으로 이동할까요?')) {
+      navigate('/order/cart');
+    }
+  };
 
   // 체크박스 클릭 이벤트 핸들러
-  const handleCheckboxChange = () => {};
+  const handleCheckboxChange = (productId, checked) => {
+    // 사용자가 특정 상품을 선택했는지에 대한 상태를 관리
+    setSelected((prev) => ({
+      ...prev,
+      [productId]: checked,
+    }));
+  };
 
   return (
     <Container>
@@ -84,7 +140,7 @@ const ProductList = ({ pageTitle }) => {
         {!isAdmin && (
           <Grid item>
             <Button onClick={handleAddToCart} color='secondary'>
-              장바구니
+              장바구니에 담기
             </Button>
           </Grid>
         )}
@@ -132,6 +188,8 @@ const ProductList = ({ pageTitle }) => {
                       <TextField
                         type='number'
                         value={product.quantity || 0}
+                        // 수량이 변경될 때마다 productList에서 지금 수량이 변경된 그 상품을 찾아서
+                        // quantity라는 새로운 프로퍼티에 값을 세팅하겠다.
                         onChange={(e) =>
                           setProductList((prevList) =>
                             prevList.map((p) =>
@@ -148,6 +206,8 @@ const ProductList = ({ pageTitle }) => {
                   {!isAdmin && (
                     <TableCell>
                       <Checkbox
+                        // 특정 변수, 객체, 배열 등등을 논리값으로 변환하고 싶을때
+                        // 앞에 !! 붙이면 논리값으로 변환됩니다.
                         checked={!!selected[product.id]}
                         onChange={(e) =>
                           handleCheckboxChange(product.id, e.target.checked)
