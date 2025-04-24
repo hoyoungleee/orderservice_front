@@ -17,8 +17,12 @@ const MemberCreate = () => {
   const [city, setCity] = useState('');
   const [street, setStreet] = useState('');
   const [zipcode, setZipcode] = useState('');
+  // react router dom 에서 제공하는 훅 useNavigate
+  // 사용자가 특정 요소를 누르지 않아도 이벤트 등에서 페이지를 이동시킬때 사용하는 훅
+  // 리턴 받은 함수를 통해 원하는 url을 문자열로 전달합니다.
+  const navigate = useNavigate();
 
-  const memberCreate = (e) => {
+  const memberCreate = async (e) => {
     e.preventDefault();
 
     // 백엔드에게 전송할 데이터 형태를 만들자(DTO 형태대로)
@@ -32,19 +36,41 @@ const MemberCreate = () => {
         zipCode: zipcode,
       },
     };
+    const res = await fetch(`http://localhost:8181/user/create`, {
+      method: 'post',
+      headers: {
+        'Content-type': 'application/json',
+      },
+      body: JSON.stringify(registData),
+    });
+    console.log(res, '넘어온 원본');
 
-    fetch(`http://localhost:8181/user/create`, {
+    const data = await res.json();
+    if (data.statusCode === 201) {
+      alert(`${data.result}님 환영합니다.`);
+      navigate(-1);
+    } else {
+      alert(data.statusMessage);
+    }
+
+    /* fetch(`http://localhost:8181/user/create`, {
       method: 'post',
       headers: {
         'Content-type': 'application/json',
       },
       body: JSON.stringify(registData),
     })
-    .then(res => res.json())
-    .then(result => {
-        console.log("전달받은 데이터",result);
-
-    })
+      .then((res) => {
+        if (res.status === 201) return res.json();
+        else {
+          alert('이메일이 중복 되었습니다. 다른 이메일로 다시 시도해보세요!');
+          return;
+        }
+      })
+      .then((result) => {
+        console.log('전달받은 데이터', result);
+        alert(`${DataTransfer.result}님 환영합니다.`);
+      }); */
   };
 
   return (
