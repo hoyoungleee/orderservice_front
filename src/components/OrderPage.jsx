@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import React, { useContext } from 'react';
 import CartContext from '../context/CartContext';
+import axios from 'axios';
 
 const OrderPage = () => {
   const { productsInCart, clearCart: onClear } = useContext(CartContext);
@@ -21,7 +22,57 @@ const OrderPage = () => {
     onClear();
   };
 
-  const orderCreate = () => {};
+  const orderCreate = async () => {
+    // 백엔드가 달라는 형태로 줘야함
+    const orderProducts = productsInCart.map((p) => ({
+      productId: p.id,
+      productQuantity: p.quantity,
+    }));
+
+    if (orderProducts.length < 0) {
+      alert('주문할 물품이 없습니다!');
+    }
+    const yesOrNo = confirm(
+      `${orderProducts.length}개의 상품을 주문하시겠습니까?`,
+    );
+    if (!yesOrNo) {
+      alert('주문을 취소합니다.');
+      return;
+    }
+
+    // const res = await fetch('http://localhost:8181/order/create', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-type': 'application/json',
+    //     Authorization: 'Bearer' + localStorage.getItem('ACCESS_TOKEN'),
+    //   },
+    //   body: JSON.stringify(orderProducts),
+    // });
+    // const data = res.json(); -> fetch사용시 데이터 꺼내는 과정
+
+    // axios 를 이용한 백엔드 요청
+    // axios 는 요청방식에 따라 메서드를 제공함.
+    // (url, 전달하고자 하는 데이터 (JSON으로 직접 변경 X), 헤더 정보)
+    // axios는 정상이 아닌 200번대 의외는 다 예외로 처리함.
+    // try,catch 로 작성합니다. (fetch는 400 번대 응답에도 예외 없음)
+    try {
+      const res = axios.post(
+        'http://localhost:8181/order/create',
+        orderProducts,
+        {
+          headers: {
+            'Content-type': 'application/json',
+            Authorization: 'Bearer ' + localStorage.getItem('ACCESS_TOKEN'),
+          },
+        },
+      );
+      alert('주문이 완료!');
+      clearCart();
+    } catch (error) {
+      console.log(err);
+      alert('주문 실패!');
+    }
+  };
 
   return (
     <Container>

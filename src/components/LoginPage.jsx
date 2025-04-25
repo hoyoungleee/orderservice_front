@@ -10,6 +10,7 @@ import {
 import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../context/UserContext';
+import axios from 'axios';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -24,23 +25,35 @@ const LoginPage = () => {
       password,
     };
 
-    const res = await fetch('http://localhost:8181/user/doLogin', {
-      method: 'POST',
-      headers: {
-        'Content-type': 'application/json',
-      },
-      body: JSON.stringify(loginData),
-    });
-    const data = await res.json();
-
-    if (res.status === 200) {
+    try {
+      const res = await axios.post(
+        'http://localhost:8181/user/doLogin',
+        loginData,
+      );
       alert('로그인 성공!');
-      // 로그인 성공하면 map이 json으로 옴 (id, role, token)
-      onLogin(data.result);
-      navigate('/');
-    } else {
-      alert('로그인 실패입니다. 아이디 또는 비밀번호를 확인하세요!');
+      onLogin(res.data.result);
+    } catch (error) {
+      console.log(error); // 백엔드 데이터 :  e.response.data
+      alert('로그인 실패. 아디나 비번확인하세요.');
     }
+
+    // const res = await fetch('http://localhost:8181/user/doLogin', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-type': 'application/json',
+    //   },
+    //   body: JSON.stringify(loginData),
+    // });
+    // const data = await res.json();
+
+    // if (res.status === 200) {
+    //   alert('로그인 성공!');
+    //   // 로그인 성공하면 map이 json으로 옴 (id, role, token)
+    //   onLogin(data.result);
+    //   navigate('/');
+    // } else {
+    //   alert('로그인 실패입니다. 아이디 또는 비밀번호를 확인하세요!');
+    // }
   };
 
   return (
