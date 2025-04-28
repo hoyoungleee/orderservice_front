@@ -19,6 +19,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import AuthContext from '../context/UserContext';
 import CartContext from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const ProductList = ({ pageTitle }) => {
   const [searchType, setSearchType] = useState('optional');
@@ -26,6 +27,11 @@ const ProductList = ({ pageTitle }) => {
   const [productList, setProductList] = useState([]);
   const [selected, setSelected] = useState({});
   const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(0); // 현재 페이지를 나타내는 변수
+  const [isLastPage, setLastPage] = useState(false); // 마지막 페이지 여부
+  // 현재 로딩중이냐? -> 백엔드로부터 상품 목록 요청을 보내서 아직 데이터를 받아오는 중인가..?
+  const [isLoading, setIsLoading] = useState(false);
+  const pageSize = 20;
 
   const { userRole } = useContext(AuthContext);
   const isAdmin = userRole === 'ADMIN';
@@ -33,18 +39,53 @@ const ProductList = ({ pageTitle }) => {
   const { addCart } = useContext(CartContext);
 
   useEffect(() => {
-    loadProduct();
+    loadProduct(); // 처음화면에 진입하면 1페이지 내용을 불러오자. (매개값은 필요없음)
+    window.addEventListener('scroll', scrollPagination);
+
+    //클린업 함수: 다른 컴포넌트가 랜더링 될 때 이벤트 해제
+    return () => window.removeEventListener('scroll', scrollPagination);
   }, []);
 
-  // 상품 목록을 백엔드에 요청하는 함수
-  const loadProduct = async (number, size) => {
-    const res = await fetch('http://localhost:8181/product/list');
-    const data = await res.json();
+  useEffect(() => {}, [currentPage]);
 
-    // 백엔드로부터 전달받은 상품 목록을 상태 변수에 세팅.
-    setProductList(data.result);
+  // 상품 목록을 백엔드에 요청하는 함수
+  const loadProduct = async () => {
+    let params = {
+      size: pageSize,
+      page: currentPage,
+    };
+    setIsLoading(true); // 요청보내기 이전 로딩상태 true 만들기
+    try {
+      const res = await axios.get('http://localhost:8181/product/list', {
+        params,
+      });
+      const data = await res.data;
+
+      if (data.result.length === 0) {
+        setLastPage(true);
+      } else {
+        // 백엔드로부터 전달받은 상품 목록을 상태 변수에 세팅.
+        setProductList(data.result);
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      //요청에 대한 응답처리가 끝나고 로딩상태 초기화
+      setIsLoading(false);
+    }
   };
 
+  const scrollPagination = () => {
+    // 브라우저 창의 높이 + 현재 페이지에서 스크롤 된 픽셀 값
+    //>= (스크롤이 필요 없는)페이지 전체 높이에서 100px 이내에 도달했는가?
+    const isBottom =
+      window.innerHeight + document.documentElement.scrollTop >=
+      document.documentElement.scrollHeight - 100;
+    if (isBottom && !isLastPage && !isLoading) {
+      // 스크롤이 특정 구간에 도달하면 바로 요청 보내는 게 아니라 다음 페이지 번호를 준비하겠다.
+      setCurrentPage((prevPage) => prevPage + 1);
+    }
+  };
   // 장바구니 클릭 이벤트 핸들러
   const handleAddToCart = () => {
     // 특정 객체에서 key값만 뽑아서 문자열 배열로 리턴해 주는 메서드

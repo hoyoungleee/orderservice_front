@@ -10,10 +10,16 @@ import {
   TableRow,
 } from '@mui/material';
 import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+import AuthContext from '../context/UserContext';
+import axiosInstance from '../configs/axios-config';
+import { useNavigate } from 'react-router-dom';
+import { handleAxiosError } from '../configs/HandleAxiosError';
 
 const MyPage = () => {
   const [memberInfoList, setMemberInfoList] = useState([]);
+  const { userRole, onLogout } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // 회원 정보를 불러오기
@@ -23,26 +29,29 @@ const MyPage = () => {
       */
     const fetchMemberInfo = async () => {
       try {
-        const res = await axios.get('http://localhost:8181/user/myInfo', {
-          headers: {
-            Authorization: 'Bearer ' + localStorage.getItem('ACCESS_TOKEN'),
-          },
+        const url = userRole === 'ADMIN' ? '/list' : '/myInfo';
+        const res = await axiosInstance.get('http://localhost:8181/user' + url);
+
+        // ADMIN인 경우는 애초에 리스트로 리턴, 일반회원은 직접 배열로 감싸주자.(고차함수 돌려야 되니깐)
+        const data = userRole === 'ADMIN' ? res.data.result : [res.data.result];
+
+        setMemberInfoList((prev) => {
+          return data.map((user) => [
+            { key: '이름', value: user.name },
+            { key: '이메일', value: user.email },
+            { key: '도시', value: user.address?.city || '등록 전' },
+            {
+              key: '상세주소',
+              value: user.address?.street || '등록 전',
+            },
+            {
+              key: '우편번호',
+              value: user.address?.zipCode || '등록 전',
+            },
+          ]);
         });
-        setMemberInfoList([
-          { key: '이름', value: res.data.result.name },
-          { key: '이메일', value: res.data.result.email },
-          { key: '도시', value: res.data.result.address?.city || '등록 전' },
-          {
-            key: '상세주소',
-            value: res.data.result.address?.street || '등록 전',
-          },
-          {
-            key: '우편번호',
-            value: res.data.result.address?.zipCode || '등록 전',
-          },
-        ]);
       } catch (e) {
-        console.log(e);
+        handleAxiosError(e.onLogout, navigate);
       }
     };
 
@@ -55,18 +64,20 @@ const MyPage = () => {
         <Grid item xs={12} md={8}>
           <Card>
             <CardHeader title='회원정보' style={{ textAlign: 'center' }} />
-            <CardContent>
-              <Table>
-                <TableBody>
-                  {memberInfoList.map((element, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{element.key}</TableCell>
-                      <TableCell>{element.value}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
+            {memberInfoList.map((element, index) => (
+              <CardContent>
+                <Table>
+                  <TableBody key={index}>
+                    {element.map((info, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{info.key}</TableCell>
+                        <TableCell>{info.value}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            ))}
           </Card>
         </Grid>
       </Grid>

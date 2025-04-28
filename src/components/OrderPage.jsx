@@ -14,6 +14,9 @@ import {
 import React, { useContext } from 'react';
 import CartContext from '../context/CartContext';
 import axios from 'axios';
+import axiosInstance from '../configs/axios-config';
+import { handleAxiosError } from '../configs/HandleAxiosError';
+import { API_BASE_URL, ORDER } from '../configs/host-config';
 
 const OrderPage = () => {
   const { productsInCart, clearCart: onClear } = useContext(CartContext);
@@ -56,21 +59,15 @@ const OrderPage = () => {
     // axios는 정상이 아닌 200번대 의외는 다 예외로 처리함.
     // try,catch 로 작성합니다. (fetch는 400 번대 응답에도 예외 없음)
     try {
-      const res = axios.post(
-        'http://localhost:8181/order/create',
+      const res = await axiosInstance.post(
+        `${API_BASE_URL}${ORDER}/create`,
         orderProducts,
-        {
-          headers: {
-            'Content-type': 'application/json',
-            Authorization: 'Bearer ' + localStorage.getItem('ACCESS_TOKEN'),
-          },
-        },
       );
+
       alert('주문이 완료!');
       clearCart();
     } catch (error) {
-      console.log(err);
-      alert('주문 실패!');
+      handleAxiosError(error);
     }
   };
 
