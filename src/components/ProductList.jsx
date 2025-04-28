@@ -20,6 +20,7 @@ import AuthContext from '../context/UserContext';
 import CartContext from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { throttle } from 'lodash';
 
 const ProductList = ({ pageTitle }) => {
   const [searchType, setSearchType] = useState('optional');
@@ -40,16 +41,32 @@ const ProductList = ({ pageTitle }) => {
 
   useEffect(() => {
     loadProduct(); // 처음화면에 진입하면 1페이지 내용을 불러오자. (매개값은 필요없음)
-    window.addEventListener('scroll', scrollPagination);
+
+    // 쓰로틀링: 짧은 시간동안 연속해서 발생한 이벤트들을 일정 시간으로 그룹화 하여
+    // 순차적으로 적용할 수 있게 하는 기법. -> 스크롤 페이징
+    // 디바운싱: 짧은 시간동안 연속해서 발생한 이벤트를 호출하지 않다가 마지막 이벤트로부터
+    // 일정 시간 이후에 한번만 호출하게 하는 기능. -> 입력값 검증
+    const thottleScroll = throttle(scrollPagination, 1500);
+    window.addEventListener('scroll', thottleScroll);
+
+    // window.addEventListener('scroll', scrollPagination);
 
     //클린업 함수: 다른 컴포넌트가 랜더링 될 때 이벤트 해제
     return () => window.removeEventListener('scroll', scrollPagination);
   }, []);
 
-  useEffect(() => {}, [currentPage]);
+  useEffect(() => {
+    // useEffect 는 하나의 컴포넌트에서 여러개 선언이 가능.
+    // 스크롤 이벤트에서 다음 페이지 번호를 준비했고,
+    // 상태가 바뀌면 그 때 백엔드로 요청을 보낼 수 있게 로직을 나누었습니다.
+    if (currentPage > 0) loadProduct();
+  }, [currentPage]);
 
   // 상품 목록을 백엔드에 요청하는 함수
   const loadProduct = async () => {
+    // 아직 로딩 중이라면 or 이미 마지막 페이지라면 더이상 진행하지 말아라.
+    if (isLoading || isLastPage) return;
+
     let params = {
       size: pageSize,
       page: currentPage,
@@ -65,7 +82,7 @@ const ProductList = ({ pageTitle }) => {
         setLastPage(true);
       } else {
         // 백엔드로부터 전달받은 상품 목록을 상태 변수에 세팅.
-        setProductList(data.result);
+        setProductList((prevList) => [...prevList, ...data.result]);
       }
     } catch (error) {
       console.log(error);
