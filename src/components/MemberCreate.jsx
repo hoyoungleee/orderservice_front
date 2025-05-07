@@ -7,9 +7,10 @@ import {
   Grid,
   TextField,
 } from '@mui/material';
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useContext, useState } from 'react';
+import { replace, useNavigate } from 'react-router-dom';
 import { API_BASE_URL, USER } from '../configs/host-config';
+import AuthContext from '../context/UserContext';
 
 const MemberCreate = () => {
   const [name, setName] = useState('');
@@ -18,15 +19,22 @@ const MemberCreate = () => {
   const [city, setCity] = useState('');
   const [street, setStreet] = useState('');
   const [zipcode, setZipcode] = useState('');
-  // react router dom 에서 제공하는 훅 useNavigate
-  // 사용자가 특정 요소를 누르지 않아도 이벤트 등에서 페이지를 이동시킬때 사용하는 훅
-  // 리턴 받은 함수를 통해 원하는 url을 문자열로 전달합니다.
+
+  // react router dom에서 제공하는 훅 useNavigate
+  // 사용자가 특정 요소를 누르지 않아도 이벤트 등에서 페이지를 이동시킬 때 사용하는 훅
+  // 리턴받은 함수를 통해 원하는 url을 문자열로 전달합니다.
   const navigate = useNavigate();
+
+  const { isLoggedIn } = useContext(AuthContext);
+  if (isLoggedIn) {
+    alert('여기 왜왔죠??');
+    navigate('/', replace);
+  }
 
   const memberCreate = async (e) => {
     e.preventDefault();
 
-    // 백엔드에게 전송할 데이터 형태를 만들자(DTO 형태대로)
+    // 백엔드에게 전송할 데이터 형태를 만들자 (DTO 형태대로)
     const registData = {
       name,
       email,
@@ -37,25 +45,26 @@ const MemberCreate = () => {
         zipCode: zipcode,
       },
     };
+
     const res = await fetch(`${API_BASE_URL}${USER}/create`, {
-      method: 'post',
+      method: 'POST',
       headers: {
         'Content-type': 'application/json',
       },
       body: JSON.stringify(registData),
     });
-    console.log(res, '넘어온 원본');
 
     const data = await res.json();
     if (data.statusCode === 201) {
-      alert(`${data.result}님 환영합니다.`);
-      navigate(-1);
+      alert(`${data.result}님 환영합니다!`);
+      navigate('/');
     } else {
       alert(data.statusMessage);
     }
 
-    /* fetch(`http://localhost:8181/user/create`, {
-      method: 'post',
+    /*
+    fetch(`http://localhost:8181/user/create`, {
+      method: 'POST',
       headers: {
         'Content-type': 'application/json',
       },
@@ -64,14 +73,17 @@ const MemberCreate = () => {
       .then((res) => {
         if (res.status === 201) return res.json();
         else {
-          alert('이메일이 중복 되었습니다. 다른 이메일로 다시 시도해보세요!');
+          alert('이메일이 중복되었습니다. 다른 이메일로 다시 시도해 보세요!');
           return;
         }
       })
-      .then((result) => {
-        console.log('전달받은 데이터', result);
-        alert(`${DataTransfer.result}님 환영합니다.`);
-      }); */
+      .then((data) => {
+        if (data) {
+          console.log('백엔드로부터 전달된 데이터: ', data);
+          alert(`${data.result}님 환영합니다!`);
+        }
+      });
+    */
   };
 
   return (
