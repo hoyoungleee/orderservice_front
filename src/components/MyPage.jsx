@@ -15,6 +15,8 @@ import AuthContext from '../context/UserContext';
 import axiosInstance from '../configs/axios-config';
 import { useNavigate } from 'react-router-dom';
 import { handleAxiosError } from '../configs/HandleAxiosError';
+import { API_BASE_URL, USER } from '../configs/host-config';
+import OrderListComponent from './OrderListComponent';
 
 const MyPage = () => {
   const [memberInfoList, setMemberInfoList] = useState([]);
@@ -24,13 +26,13 @@ const MyPage = () => {
   useEffect(() => {
     // 회원 정보를 불러오기
     /*
-      이름, 이메일, 도시, 상세주소 우편번호를 노출해야 합니다.
-      위 5가지 정보를 객체로 포장해서 memberInfoList에 넣어주세요.
-      */
+    이름, 이메일, 도시, 상세주소 우편번호를 노출해야 합니다.
+    위 5가지 정보를 객체로 포장해서 memberInfoList에 넣어주세요.
+    */
     const fetchMemberInfo = async () => {
       try {
         const url = userRole === 'ADMIN' ? '/list' : '/myInfo';
-        const res = await axiosInstance.get('http://localhost:8181/user' + url);
+        const res = await axiosInstance.get(`${API_BASE_URL}${USER}` + url);
 
         // ADMIN인 경우는 애초에 리스트로 리턴, 일반회원은 직접 배열로 감싸주자.(고차함수 돌려야 되니깐)
         const data = userRole === 'ADMIN' ? res.data.result : [res.data.result];
@@ -51,7 +53,7 @@ const MyPage = () => {
           ]);
         });
       } catch (e) {
-        handleAxiosError(e.onLogout, navigate);
+        handleAxiosError(e, onLogout, navigate);
       }
     };
 
@@ -83,7 +85,7 @@ const MyPage = () => {
       </Grid>
 
       {/* OrderListComponent */}
-      {/* <OrderListComponent isAdmin={userRole === 'ADMIN'} /> */}
+      <OrderListComponent isAdmin={userRole === 'ADMIN'} />
     </Container>
   );
 };

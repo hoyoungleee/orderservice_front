@@ -6,20 +6,20 @@
  호스트 네임을 전역적으로 관리하려는 의도로 설정하는 파일.
 */
 
-//브라우저에서 현재 클라이언트의 호스트 이름을 얻어오기
+// 브라우저에서 현재 클라이언트의 호스트 이름을 얻어오기
 const clientHostName = window.location.hostname;
 
 let backendHostName;
 
 if (clientHostName === 'localhost') {
-  // 개발중
-  backendHostName = 'http://localhost:8181';
+  // 개발 중
+  backendHostName = 'http://localhost:8000';
 } else if (clientHostName === 'playdatashop.com') {
-  //배포해서 현재 서비스 중
-  backendHostName = 'https://api.playdatahop.com';
+  // 배포해서 현재 서비스 중
+  backendHostName = 'https://api.playdatashop.com';
 }
 
 export const API_BASE_URL = backendHostName;
-export const USER = '/user';
-export const PROD = '/product';
-export const ORDER = '/order';
+export const USER = '/user-service/user';
+export const PROD = '/product-service/product';
+export const ORDER = '/ordering-service/order';
