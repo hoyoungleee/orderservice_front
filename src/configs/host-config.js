@@ -14,9 +14,13 @@ let backendHostName;
 if (clientHostName === 'localhost') {
   // 개발 중
   backendHostName = 'http://localhost:8000';
-} else if (clientHostName === 'playdatashop.com') {
+} else if (
+  clientHostName ===
+  'playdata-orderservice4908.s3-website.ap-northeast-2.amazonaws.com'
+) {
   // 배포해서 현재 서비스 중
-  backendHostName = 'https://api.playdatashop.com';
+  backendHostName =
+    'https://playdata-orderservice4908.s3-website.ap-northeast-2.amazonaws.com';
 }
 
 export const API_BASE_URL = backendHostName;
